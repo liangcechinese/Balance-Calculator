@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剩余金额计算</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        input[type="date"] {
+            padding: 12px 15px;
+            font-size: 18px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        /* 修改日期选择器的默认外观 */
+        input[type="date"]::-webkit-datetime-edit-text,
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+            color: #666;
+        }
+        
+        input[type="date"]:invalid::-webkit-datetime-edit {
+            color: transparent;
+        }
+        
+        input[type="date"]:focus::-webkit-datetime-edit {
+            color: #666;
+        }
+
+        /* 添加自定义占位符 */
+        input[type="date"]::before {
+            content: "请点击输入起始日期";
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            pointer-events: none;
+        }
+
+        input[type="date"]:valid::before,
+        input[type="date"]:focus::before {
+            content: "";
+        }
+        
+        input[type="date"]:hover {
+            background-color: #e9ecef;
+            border-color: #4CAF50;
+        }
+        
+        input[type="date"]:focus {
+            background-color: #fff;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        }
+        
+        /* 优化日期选择器的下拉箭头 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            padding: 5px;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .button-group button.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #calculateBtn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        #calculateBtn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .error {
+            color: #f44336;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 300px;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .date-wrapper {
+            position: relative;
+        }
+        .title-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .refresh-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            padding: 0;
+        }
+
+        .refresh-btn:hover {
+            background-color: #45a049;
+            transform: rotate(180deg);
+        }
+
+        .refresh-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .result-amount {
+            font-size: 32px;
+            color: #4CAF50;
+            font-weight: bold;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .result-details {
+            color: #666;
+            margin-bottom: 15px;
+            text-align: left;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <h1>剩余金额计算</h1>
+            <button class="refresh-btn" onclick="location.reload()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                    <path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="input-group">
+            <label>选择开通日期：</label>
+            <div class="date-wrapper" onclick="document.getElementById('historicDate').showPicker()">
+                <input type="date" id="historicDate">
+            </div>
+            <div class="error" id="dateError">请选择一个开通的日期</div>
+        </div>
+        
+        <div class="input-group">
+            <label>选择时间单位：</label>
+            <div class="button-group">
+                <button onclick="selectTimeUnit('365')">年</button>
+                <button onclick="selectTimeUnit('90')">季度</button>
+                <button onclick="selectTimeUnit('30')">月</button>
+                <button onclick="selectTimeUnit('184')">184天</button>
+            </div>
+            <div class="error" id="unitError">请选择时间单位</div>
+        </div>
+        
+        <div class="input-group">
+            <label>输入价格：</label>
+            <input type="number" id="price" min="0" step="0.01" placeholder="请输入价格">
+            <div class="error" id="priceError">请输入有效的价格</div>
+        </div>
+        
+        <button id="calculateBtn" onclick="calculate()">计算</button>
+    </div>
+
+    <!-- 结果弹窗 -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2>计算结果</h2>
+            <p id="resultText"></p>
+        </div>
+    </div>
+
+    <script>
+        let selectedUnit = '';
+        let isModalOpen = false;
+
+        // 添加键盘事件监听
+        document.addEventListener('keydown', function(event) {
+            // 当结果界面打开时，按任意键关闭
+            if (isModalOpen) {
+                closeModal();
+                return;
+            }
+            // 当按下回车键时触发计算
+            if (event.key === 'Enter') {
+                calculate();
+            }
+        });
+
+        function selectTimeUnit(unit) {
+            selectedUnit = unit;
+            // 更新按钮样式
+            document.querySelectorAll('.button-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            document.getElementById('unitError').style.display = 'none';
+        }
+
+        function validateInputs() {
+            let isValid = true;
+            const date = new Date(document.getElementById('historicDate').value);
+            const today = new Date();
+            const price = document.getElementById('price').value;
+
+            // 检查日期
+            if (!document.getElementById('historicDate').value) {
+                document.getElementById('dateError').textContent = '请选择日期';
+                document.getElementById('dateError').style.display = 'block';
+                isValid = false;
+            } else if (date >= today) {
+                document.getElementById('dateError').textContent = '请选择一个过去的日期';
+                document.getElementById('dateError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('dateError').style.display = 'none';
+            }
+
+            // 检查时间单位
+            if (!selectedUnit) {
+                document.getElementById('unitError').style.display = 'block';
+                isValid = false;
+            }
+
+            // 检查价格
+            if (!price || price <= 0) {
+                document.getElementById('priceError').style.display = 'block';
+                isValid = false;
+            } else {
+                document.getElementById('priceError').style.display = 'none';
+            }
+
+            return isValid;
+        }
+
+        function calculate() {
+            if (!validateInputs()) return;
+
+            const historicDate = new Date(document.getElementById('historicDate').value);
+            const today = new Date();
+            const price = parseFloat(document.getElementById('price').value);
+
+            let totalDays;
+            let timeUnit;
+            
+            switch(selectedUnit) {
+                case '365':
+                    totalDays = 365;
+                    timeUnit = '年';
+                    break;
+                case '90':
+                    totalDays = 90;
+                    timeUnit = '季度';
+                    break;
+                case '30':
+                    totalDays = 30;
+                    timeUnit = '月';
+                    break;
+                case '184':
+                    totalDays = 184;
+                    timeUnit = '184天';
+                    break;
+            }
+
+            // 计算每天的价格
+            const pricePerDay = price / totalDays;
+            
+            // 计算从开始日期到今天的天数
+            const passedDays = Math.floor((today - historicDate) / (1000 * 60 * 60 * 24));
+            const remainingDays = Math.max(0, totalDays - passedDays);
+            
+            // 计算剩余金额
+            const result = (pricePerDay * remainingDays).toFixed(2);
+
+            // 显示结果
+            document.getElementById('resultText').innerHTML = `
+                <div class="result-details">
+                    选择的时间单位：${timeUnit}<br>
+                    已过去：${passedDays}天<br>
+                    剩余：${remainingDays}天<br>
+                    每天价格：¥${pricePerDay.toFixed(2)}
+                </div>
+                <div class="result-amount">
+                    ¥${result}
+                </div>
+            `;
+            document.getElementById('resultModal').style.display = 'block';
+            isModalOpen = true;
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+            isModalOpen = false;
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('resultModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+                isModalOpen = false;
+            }
+        }
+
+        // 设置日期输入框的最大值为今天
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('historicDate').max = today;
+    </script>
+</body>
+</html>
